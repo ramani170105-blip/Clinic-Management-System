@@ -78,6 +78,17 @@ The database is managed via Prisma ORM and consists of the following core models
 
 ---
 
+## 🔑 Default Test Credentials
+
+When reviewing the application, you can log into the **Staff Login (Admin Portal)** using the following seeded credentials:
+
+- **Email**: `ramani170105@gmail.com`
+- **Password**: `admin123`
+
+*(Note: From the Admin dashboard, you can create new Doctor accounts. The system will auto-generate their Employee IDs and email them their passwords).*
+
+---
+
 ## 🤖 LLM Prompts (Gemini 3.6 Flash)
 
 The system utilizes highly specialized prompts to interact with the Gemini AI model. These prompts are located in `backend/src/services/llm.ts`.
