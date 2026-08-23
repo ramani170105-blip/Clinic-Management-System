@@ -84,7 +84,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editForm.doctorId) return;
     try {
-      await axios.put(`http://localhost:3000/api/admin/doctors/${editForm.doctorId}`, editForm, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/admin/doctors/${editForm.doctorId}`, editForm, { headers: { Authorization: `Bearer ${token}` } });
       alert('Doctor updated successfully');
       fetchDoctors();
       setEditForm({ doctorId: '', specialisation: '', workingHoursStart: '09:00', workingHoursEnd: '17:00', slotDurationMins: 30 });

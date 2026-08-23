@@ -29,7 +29,7 @@ export default function PatientDashboard() {
 
   useEffect(() => {
     if (selectedDoctor && selectedDate) {
-      axios.get(`http://localhost:3000/api/patient/doctors/${selectedDoctor}/slots?date=${selectedDate}`)
+      axios.get(`${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/patient/doctors/${selectedDoctor}/slots?date=${selectedDate}`)
         .then(res => setSlots(res.data))
         .catch(err => console.error('Error fetching slots:', err));
     } else {

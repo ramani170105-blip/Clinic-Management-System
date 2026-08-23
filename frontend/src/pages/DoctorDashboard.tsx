@@ -36,7 +36,7 @@ export default function DoctorDashboard() {
     setGenerating(true);
     try {
       const res = await axios.post(
-        `http://localhost:3000/api/doctor/appointments/${selectedAppointment.id}/generate-notes`,
+        `${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/doctor/appointments/${selectedAppointment.id}/generate-notes`,
         { doctorObservations: doctorObs },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -57,7 +57,7 @@ export default function DoctorDashboard() {
 
     setLoading(true);
     try {
-      await axios.post(`http://localhost:3000/api/doctor/appointments/${selectedAppointment.id}/notes`, {
+      await axios.post(`${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/doctor/appointments/${selectedAppointment.id}/notes`, {
         clinicalNotes: notes,
         prescriptionDetails: prescription,
         frequencyHours: frequency
