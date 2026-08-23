@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(uuid())
+  email         String?         @unique
+  empId         String?         @unique
+  passwordHash  String?
+  role          String          // "ADMIN", "DOCTOR", "PATIENT"
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  patientProfile PatientProfile?
+  doctorProfile  DoctorProfile?
+}
+
+model PatientProfile {
+  id                   String                 @id @default(uuid())
+  userId               String                 @unique
+  user                 User                   @relation(fields: [userId], references: [id])
+  name                 String
+  phone                String?
+  age                  Int?
+  sex                  String?
+  medicalHistory       String?
+  pictureUrl           String?
+  appointments         Appointment[]
+  medicationReminders  MedicationReminder[]
+}
+
+model DoctorProfile {
+  id                 String          @id @default(uuid())
+  userId             String          @unique
+  user               User            @relation(fields: [userId], references: [id])
+  name               String
+  specialisation     String
+  workingHoursStart  String          // format: "HH:MM" e.g., "09:00"
+  workingHoursEnd    String          // format: "HH:MM" e.g., "17:00"
+  slotDurationMins   Int             @default(30)
+  appointments       Appointment[]
+  leaves             DoctorLeave[]
+}
+
+model DoctorLeave {
+  id        String        @id @default(uuid())
+  doctorId  String
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id])
+  date      DateTime
+  
+  @@unique([doctorId, date])
+}
+
+model Appointment {
+  id                     String             @id @default(uuid())
+  patientId              String
+  patient                PatientProfile     @relation(fields: [patientId], references: [id])
+  doctorId               String
+  doctor                 DoctorProfile      @relation(fields: [doctorId], references: [id])
+  startTime              DateTime
+  endTime                DateTime
+  status                 String             // "BOOKED", "COMPLETED", "CANCELLED"
+  googleCalendarEventId  String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  
+  preVisitForm           PreVisitForm?
+  postVisitNote          PostVisitNote?
+}
+
+model PreVisitForm {
+  id                     String      @id @default(uuid())
+  appointmentId          String      @unique
+  appointment            Appointment @relation(fields: [appointmentId], references: [id])
+  symptomsText           String
+  llmUrgencyLevel        String?     // Low, Medium, High
+  llmChiefComplaint      String?
+  llmSuggestedQuestions  String?
+  createdAt              DateTime    @default(now())
+}
+
+model PostVisitNote {
+  id                    String      @id @default(uuid())
+  appointmentId         String      @unique
+  appointment           Appointment @relation(fields: [appointmentId], references: [id])
+  clinicalNotes         String
+  prescriptionDetails   String?
+  llmPatientSummary     String?
+  llmFollowUpSteps      String?
+  createdAt             DateTime    @default(now())
+}
+
+model MedicationReminder {
+  id                String         @id @default(uuid())
+  patientId         String
+  patient           PatientProfile @relation(fields: [patientId], references: [id])
+  medicationName    String
+  frequencyHours    Int
+  nextReminderTime  DateTime
+  active            Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
