@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -22,14 +23,14 @@ export default function PatientDashboard() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/patient/doctors`)
+    axios.get(`${API_URL}/api/patient/doctors`)
       .then(res => setDoctors(res.data))
       .catch(err => console.error('Error fetching doctors:', err));
   }, []);
 
   useEffect(() => {
     if (selectedDoctor && selectedDate) {
-      axios.get(`${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/patient/doctors/${selectedDoctor}/slots?date=${selectedDate}`)
+      axios.get(`${API_URL}/api/patient/doctors/${selectedDoctor}/slots?date=${selectedDate}`)
         .then(res => setSlots(res.data))
         .catch(err => console.error('Error fetching slots:', err));
     } else {
@@ -46,7 +47,7 @@ export default function PatientDashboard() {
 
     setLoading(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/patient/query`, {
+      await axios.post(`${API_URL}/api/patient/query`, {
         ...formData,
         doctorId: selectedDoctor,
         startTime: selectedSlot

@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
 
   const fetchDoctors = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/admin/doctors`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get(`${API_URL}/api/admin/doctors`, { headers: { Authorization: `Bearer ${token}` } });
       setDoctors(res.data);
     } catch (e) {
       console.error(e);
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
   const handleAddDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/admin/doctors`, docForm, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${API_URL}/api/admin/doctors`, docForm, { headers: { Authorization: `Bearer ${token}` } });
       alert(`Doctor created successfully!\n\nPlease share these credentials with the doctor:\nEmployee ID: ${res.data.empId}\nPassword: ${docForm.password}`);
       setDocForm({
         name: '', specialisation: '', workingHoursStart: '09:00', workingHoursEnd: '17:00', slotDurationMins: 30, email: '', password: ''
@@ -58,7 +59,7 @@ export default function AdminDashboard() {
   const handleMarkLeave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/admin/doctors/leave`, leaveForm, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${API_URL}/api/admin/doctors/leave`, leaveForm, { headers: { Authorization: `Bearer ${token}` } });
       alert(`Leave marked. ${res.data.cancelledCount} appointments were cancelled and patients notified.`);
     } catch (e: any) {
       alert(e.response?.data?.error || 'Error marking leave');
@@ -84,7 +85,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     if (!editForm.doctorId) return;
     try {
-      await axios.put(`${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/admin/doctors/${editForm.doctorId}`, editForm, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.put(`${API_URL}/api/admin/doctors/${editForm.doctorId}`, editForm, { headers: { Authorization: `Bearer ${token}` } });
       alert('Doctor updated successfully');
       fetchDoctors();
       setEditForm({ doctorId: '', specialisation: '', workingHoursStart: '09:00', workingHoursEnd: '17:00', slotDurationMins: 30 });

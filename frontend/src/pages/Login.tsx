@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -43,7 +44,7 @@ export default function Login() {
                ? { empId, password } 
                : { name, phone, email })
       };
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/auth/login`, payload);
+      const res = await axios.post(`${API_URL}/api/auth/login`, payload);
       login(res.data.token, res.data.user);
       if (res.data.user.role === 'PATIENT') navigate('/patient');
       if (res.data.user.role === 'DOCTOR') navigate('/doctor');

@@ -1,3 +1,4 @@
+import { API_URL } from '../services/api';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
@@ -22,7 +23,7 @@ export default function DoctorDashboard() {
 
   const fetchAppointments = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/doctor/appointments`, {
+      const res = await axios.get(`${API_URL}/api/doctor/appointments`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAppointments(res.data);
@@ -36,7 +37,7 @@ export default function DoctorDashboard() {
     setGenerating(true);
     try {
       const res = await axios.post(
-        `${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/doctor/appointments/${selectedAppointment.id}/generate-notes`,
+        `${API_URL}/api/doctor/appointments/${selectedAppointment.id}/generate-notes`,
         { doctorObservations: doctorObs },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -57,7 +58,7 @@ export default function DoctorDashboard() {
 
     setLoading(true);
     try {
-      await axios.post(`${(import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com')}/api/doctor/appointments/${selectedAppointment.id}/notes`, {
+      await axios.post(`${API_URL}/api/doctor/appointments/${selectedAppointment.id}/notes`, {
         clinicalNotes: notes,
         prescriptionDetails: prescription,
         frequencyHours: frequency
