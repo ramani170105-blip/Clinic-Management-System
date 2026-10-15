@@ -21,6 +21,9 @@ const initTransporter = async () => {
         user,
         pass,
       },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000,
     });
 
     console.log(`📧 Gmail Service initialized for: ${user}`);

@@ -17,7 +17,7 @@ router.get('/doctors', async (req: Request, res: Response) => {
     });
     res.json(doctors);
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: (error as any)?.message || 'Server error' });
   }
 });
 
@@ -58,8 +58,8 @@ router.post('/doctors', async (req: Request, res: Response): Promise<void> => {
       return { profile, user };
     });
 
-    // Send email to the doctor with their credentials
-    await sendEmail({
+    // Send email to the doctor with their credentials (asynchronously)
+    sendEmail({
       to: email,
       subject: 'Welcome to Clinic System - Your Login Credentials',
       html: `<h2>Welcome Dr. ${name}!</h2>
@@ -70,12 +70,12 @@ router.post('/doctors', async (req: Request, res: Response): Promise<void> => {
                <li><b>Password:</b> ${password}</li>
              </ul>
              <p>Please log in to the portal using these credentials.</p>`
-    });
+    }).catch(e => console.error('Doctor email error:', e));
 
     res.json({ doctor: result.profile, empId: result.user.empId });
   } catch (error) {
     console.error('Error creating doctor:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: (error as any)?.message || 'Server error' });
   }
 });
 
@@ -149,7 +149,7 @@ router.post('/doctors/leave', async (req: Request, res: Response): Promise<void>
     res.json({ leave, cancelledCount: affectedAppointments.length });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: (error as any)?.message || 'Server error' });
   }
 });
 router.put('/doctors/:id', async (req: Request, res: Response): Promise<void> => {
@@ -170,7 +170,7 @@ router.put('/doctors/:id', async (req: Request, res: Response): Promise<void> =>
     res.json(updatedDoctor);
   } catch (error) {
     console.error('Error updating doctor:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: (error as any)?.message || 'Server error' });
   }
 });
 
