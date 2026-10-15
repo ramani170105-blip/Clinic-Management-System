@@ -142,16 +142,16 @@ router.post('/appointments/:id/notes', async (req: Request, res: Response): Prom
     }
 
     // Send Post-Visit Email
-    await sendEmail({
-      to: appointment.patient.user.email || 'patient@example.com',
-      subject: 'Your Post-Visit Summary & Prescription',
+    sendEmail({
+      to: appointment.patient.user?.email || "patient@example.com",
+      subject: "Your Post-Visit Summary & Prescription",
       html: `<h2>Visit Summary</h2>
              <p>Hi ${appointment.patient.name}, here is the summary of your visit with Dr. ${appointment.doctor.name}:</p>
              <p><b>Summary:</b> ${aiSummary.patientSummary}</p>
              <p><b>Medication Schedule:</b> ${aiSummary.medicationSchedule}</p>
              <p><b>Follow-up Steps:</b> ${aiSummary.followUpSteps}</p>
              <p>Take care!</p>`
-    });
+    }).catch(err => console.error("Failed to send post-visit email:", err));
 
     res.json({ message: 'Notes submitted successfully', postNote });
   } catch (error) {

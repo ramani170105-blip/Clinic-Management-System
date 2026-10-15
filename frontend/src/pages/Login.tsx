@@ -18,6 +18,7 @@ export default function Login() {
   const [empId, setEmpId] = useState(roleParam?.toUpperCase() === 'DOCTOR' ? 'DOC00000' : '');
   const [password, setPassword] = useState(roleParam?.toUpperCase() === 'DOCTOR' ? 'password123' : '');
   const [role, setRole] = useState(roleParam ? roleParam.toUpperCase() : 'PATIENT');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (roleParam) {
@@ -35,6 +36,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const payload = {
         role,
@@ -50,20 +52,33 @@ export default function Login() {
       if (res.data.user.role === 'DOCTOR') navigate('/doctor');
       if (res.data.user.role === 'ADMIN') navigate('/admin');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Login failed');
+      const errMsg = error.response?.data?.error 
+        || (error.message?.includes('Network Error') 
+            ? 'Server is waking up or unreachable. Please try again in a few moments.' 
+            : 'Login failed. Please check your credentials and try again.');
+      alert(errMsg);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="flex-center animate-fade-in">
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>{role === 'PATIENT' ? 'Welcome' : 'Welcome Back'}</h2>
+      <div className="glass-panel" style={{ width: '100%', maxWidth: '420px' }}>
+        <h2 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
+          {role === 'PATIENT' ? 'Patient Portal' : (role === 'ADMIN' ? 'Admin Portal' : 'Staff Portal')}
+        </h2>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          {role === 'PATIENT' 
+            ? 'Enter your details to book appointments & view your medical records' 
+            : 'Sign in with your staff credentials'}
+        </p>
         
         <form onSubmit={handleSubmit}>
           {role === 'ADMIN' ? (
             <>
               <div className="form-group">
-                <label className="form-label">Email</label>
+                <label className="form-label">Admin Email</label>
                 <input 
                   type="email" 
                   className="form-input" 
@@ -93,7 +108,7 @@ export default function Login() {
                   className="form-input" 
                   value={empId} 
                   onChange={e => setEmpId(e.target.value)} 
-                  placeholder={role === 'DOCTOR' ? 'DOC12345' : 'NUR12345'}
+                  placeholder={role === 'DOCTOR' ? 'DOC00000' : 'NUR12345'}
                   required 
                 />
               </div>
@@ -122,7 +137,7 @@ export default function Login() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">Email</label>
+                <label className="form-label">Email Address</label>
                 <input 
                   type="email" 
                   className="form-input" 
@@ -131,6 +146,9 @@ export default function Login() {
                   placeholder="e.g. john@example.com"
                   required 
                 />
+                <small style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>
+                  Used for appointment confirmations & doctor summaries
+                </small>
               </div>
               <div className="form-group">
                 <label className="form-label">Phone Number</label>
@@ -139,14 +157,21 @@ export default function Login() {
                   className="form-input" 
                   value={phone} 
                   onChange={e => setPhone(e.target.value)} 
-                  placeholder="e.g. +1 234 567 8900"
+                  placeholder="e.g. 9876543210"
                   required 
                 />
               </div>
             </>
           )}
           
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }}>{role === 'PATIENT' ? 'Register' : 'Login'}</button>
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ width: '100%', marginTop: '1rem' }}
+            disabled={loading}
+          >
+            {loading ? 'Connecting...' : (role === 'PATIENT' ? 'Continue to Patient Portal' : 'Login')}
+          </button>
         </form>
       </div>
     </div>
