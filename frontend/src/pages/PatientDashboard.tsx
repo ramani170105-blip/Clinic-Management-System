@@ -22,7 +22,7 @@ export default function PatientDashboard() {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    axios.get('http://localhost:3000/api/patient/doctors')
+    axios.get(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/patient/doctors`)
       .then(res => setDoctors(res.data))
       .catch(err => console.error('Error fetching doctors:', err));
   }, []);
@@ -46,7 +46,7 @@ export default function PatientDashboard() {
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:3000/api/patient/query', {
+      await axios.post(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/patient/query`, {
         ...formData,
         doctorId: selectedDoctor,
         startTime: selectedSlot
