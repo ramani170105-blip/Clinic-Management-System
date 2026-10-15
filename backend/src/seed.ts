@@ -31,13 +31,34 @@ async function main() {
       }
     });
 
-    console.log(`Default doctor created!`);
+    console.log('Default doctor created!');
   } else {
-    console.log(`Default doctor already exists.`);
+    console.log('Default doctor already exists.');
+  }
+
+  // Seed default Admin
+  const adminEmail = 'ramani170105@gmail.com';
+  const adminPassword = 'admin123';
+  const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
+
+  if (!existingAdmin) {
+    const adminHash = await bcrypt.hash(adminPassword, 10);
+    await prisma.user.create({
+      data: {
+        email: adminEmail,
+        passwordHash: adminHash,
+        role: 'ADMIN',
+      },
+    });
+    console.log('Default admin created!');
+  } else {
+    console.log('Default admin already exists.');
   }
   
-  console.log(`Emp ID: ${empId}`);
-  console.log(`Password: ${password}`);
+  console.log('Emp ID: ' + empId);
+  console.log('Password: ' + password);
+  console.log('Admin Email: ' + adminEmail);
+  console.log('Admin Password: ' + adminPassword);
 }
 
 main()

@@ -20,10 +20,14 @@ export default function Login() {
 
   useEffect(() => {
     if (roleParam) {
-      setRole(roleParam.toUpperCase());
-      if (roleParam.toUpperCase() === 'DOCTOR') {
+      const upperRole = roleParam.toUpperCase();
+      setRole(upperRole);
+      if (upperRole === 'DOCTOR') {
         setEmpId('DOC00000');
         setPassword('password123');
+      } else if (upperRole === 'ADMIN') {
+        setEmail('ramani170105@gmail.com');
+        setPassword('admin123');
       }
     }
   }, [roleParam]);
@@ -39,7 +43,7 @@ export default function Login() {
                ? { empId, password } 
                : { name, phone, email })
       };
-      const res = await axios.post('http://localhost:3000/api/auth/login', payload);
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'https://clinic-management-system-v4b7.onrender.com'}/api/auth/login`, payload);
       login(res.data.token, res.data.user);
       if (res.data.user.role === 'PATIENT') navigate('/patient');
       if (res.data.user.role === 'DOCTOR') navigate('/doctor');
