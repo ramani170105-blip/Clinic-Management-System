@@ -126,24 +126,38 @@ router.post("/doctors/leave", async (req: Request, res: Response): Promise<void>
       if (app.patient.user?.email) {
         sendEmail({
           to: app.patient.user.email,
-          subject: "Appointment Cancelled - Doctor on Leave",
-          html: `<h2>Appointment Cancellation</h2>
-                 <p>Hi ${app.patient.name},</p>
-                 <p>Unfortunately, your appointment with Dr. ${app.doctor.name} on <b>${app.startTime.toLocaleString()}</b> has been cancelled because the doctor is on leave.</p>
-                 <p>Please log in to the portal to book a new slot.</p>`
-        }).catch(e => console.error("Cancel email error:", e));
+          subject: "Appointment Rescheduling Required - Doctor on Leave",
+          html: `<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px;">
+                   <h2 style="color: #d9534f;">Appointment Cancelled</h2>
+                   <p>Dear ${app.patient.name},</p>
+                   <p>We regret to inform you that your upcoming appointment with <b>Dr. ${app.doctor.name}</b> on <b>${app.startTime.toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}</b> has been cancelled because the doctor is on approved leave.</p>
+                   <p>Please sign in to the <a href="http://localhost:5173/login?role=patient" style="color: #0284c7; text-decoration: underline;">Patient Portal</a> to select an alternative date or choose another doctor.</p>
+                   <p>We apologize for any inconvenience caused.</p>
+                   <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">Best regards,<br/>Clinic Care Team</p>
+                 </div>`
+        }).catch(e => console.error("Patient leave cancellation email error:", e));
       }
     }
 
     const doc = await prisma.doctorProfile.findUnique({ where: { id: doctorId }, include: { user: true } });
     if (doc?.user?.email) {
+      const formattedDate = dayStart.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       sendEmail({
         to: doc.user.email,
-        subject: "You have been marked on leave",
-        html: `<h2>Leave Notification</h2>
-               <p>Hi Dr. ${doc.name},</p>
-               <p>The administrator has marked you on leave for <b>${dayStart.toLocaleDateString()}</b>.</p>
-               <p>As a result, <b>${affectedAppointments.length}</b> of your scheduled appointments for this day have been automatically cancelled and the patients have been notified.</p>`
+        subject: "Leave Request Approved - Clinic Administration",
+        html: `<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px;">
+                 <h2 style="color: #0284c7;">Leave Approved & Schedule Updated</h2>
+                 <p>Dear Dr. ${doc.name},</p>
+                 <p>Your leave for <b>${formattedDate}</b> has been approved and registered in the system by the administrator.</p>
+                 <div style="background: #f8fafc; border-left: 4px solid #0284c7; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
+                   <p style="margin: 0 0 8px 0;"><b>Status:</b> Approved / On Leave</p>
+                   <p style="margin: 0;"><b>Cancelled Appointments:</b> ${affectedAppointments.length}</p>
+                 </div>
+                 ${affectedAppointments.length > 0 
+                   ? '<p>All affected patients have been automatically sent cancellation and rescheduling notices via email.</p>' 
+                   : '<p>You had no scheduled appointments for this day.</p>'}
+                 <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">Sincerely,<br/>Clinic Administration</p>
+               </div>`
       }).catch(e => console.error("Doctor leave email error:", e));
     }
 

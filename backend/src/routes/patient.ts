@@ -141,7 +141,7 @@ router.get("/appointments", async (req: any, res: Response) => {
 
 router.post("/query", async (req: any, res: Response): Promise<void> => {
   try {
-    const { name, age, sex, phone, symptoms, doctorId, startTime } = req.body;
+    const { name, age, sex, phone, email, symptoms, doctorId, startTime } = req.body;
 
     if (!doctorId || !startTime) {
       res.status(400).json({ error: "Missing doctorId or startTime for booking" });
@@ -152,6 +152,23 @@ router.post("/query", async (req: any, res: Response): Promise<void> => {
     if (!patient) {
       res.status(404).json({ error: "Patient profile not found" });
       return;
+    }
+
+    // Update patient email on User if provided
+    if (email && typeof email === 'string' && (!patient.user.email || patient.user.email !== email.trim().toLowerCase())) {
+      const cleanEmail = email.trim().toLowerCase();
+      try {
+        const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
+        if (!existing || existing.id === patient.userId) {
+          await prisma.user.update({
+            where: { id: patient.userId },
+            data: { email: cleanEmail }
+          });
+          patient.user.email = cleanEmail;
+        }
+      } catch (e) {
+        console.warn('Could not update patient email:', e);
+      }
     }
 
     // Update patient profile details if provided
@@ -265,35 +282,58 @@ router.post("/query", async (req: any, res: Response): Promise<void> => {
       attendees: [{ name: patient.name, email: patient.user?.email || "patient@example.com" }]
     });
 
-    if (patient.user?.email) {
+    const patientEmailRecipient = patient.user?.email || (email && typeof email === 'string' ? email.trim().toLowerCase() : null);
+
+    if (patientEmailRecipient) {
+      const formattedDate = start.toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
       sendEmail({
-        to: patient.user.email,
-        subject: "Appointment Booking Confirmation",
-        html: `<h2>Appointment Confirmed!</h2>
-               <p>Hi ${patient.name},</p>
-               <p>Your appointment with Dr. ${doctor.name} is booked for <b>${start.toLocaleString()}</b>.</p>`,
+        to: patientEmailRecipient,
+        subject: "Appointment Booking Confirmation - Clinic System",
+        html: `<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px;">
+                 <h2 style="color: #059669;">Appointment Confirmed!</h2>
+                 <p>Dear ${patient.name},</p>
+                 <p>Your medical appointment with <b>Dr. ${doctor.name} (${doctor.specialisation})</b> has been successfully booked.</p>
+                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px 18px; margin: 16px 0; border-radius: 6px;">
+                   <p style="margin: 0 0 8px 0;"><b>Doctor:</b> Dr. ${doctor.name} (${doctor.specialisation})</p>
+                   <p style="margin: 0 0 8px 0;"><b>Date & Time:</b> ${formattedDate}</p>
+                   <p style="margin: 0;"><b>Symptoms Reported:</b> ${symptoms}</p>
+                 </div>
+                 <p>A calendar invitation (<code>appointment.ics</code>) is attached to this email. You can open it to automatically add the appointment to Google Calendar, Apple Calendar, or Outlook.</p>
+                 <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">Warm regards,<br/>Clinic Care Team</p>
+               </div>`,
         attachments: icsContent ? [{
           filename: "appointment.ics",
           content: icsContent,
           contentType: "text/calendar"
         }] : []
-      }).catch(e => console.error("Patient email error:", e));
+      }).catch(e => console.error("Patient confirmation email error:", e));
     }
 
     if (doctor.user?.email) {
+      const formattedDate = start.toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' });
       sendEmail({
         to: doctor.user.email,
-        subject: "New Appointment Booked",
-        html: `<h2>New Appointment!</h2>
-               <p>Hi Dr. ${doctor.name},</p>
-               <p>A new appointment has been booked by <b>${patient.name}</b> for <b>${start.toLocaleString()}</b>.</p>
-               <p><b>Patient Symptoms:</b> ${symptoms}</p>`,
+        subject: "New Patient Appointment Booked - " + patient.name,
+        html: `<div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px;">
+                 <h2 style="color: #0284c7;">New Patient Appointment</h2>
+                 <p>Dear Dr. ${doctor.name},</p>
+                 <p>A new appointment has been scheduled with you:</p>
+                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px 18px; margin: 16px 0; border-radius: 6px;">
+                   <p style="margin: 0 0 8px 0;"><b>Patient Name:</b> ${patient.name}</p>
+                   <p style="margin: 0 0 8px 0;"><b>Date & Time:</b> ${formattedDate}</p>
+                   <p style="margin: 0 0 8px 0;"><b>Phone:</b> ${patient.phone || 'N/A'}</p>
+                   <p style="margin: 0 0 8px 0;"><b>Urgency Level:</b> ${parsedSummary.urgencyLevel || 'Medium'}</p>
+                   <p style="margin: 0;"><b>Patient Symptoms:</b> ${symptoms}</p>
+                 </div>
+                 <p>A calendar invite is attached for your schedule.</p>
+                 <p style="margin-top: 2rem; color: #666; font-size: 0.9rem;">Best regards,<br/>Clinic Management System</p>
+               </div>`,
         attachments: icsContent ? [{
           filename: "appointment.ics",
           content: icsContent,
           contentType: "text/calendar"
         }] : []
-      }).catch(e => console.error("Doctor email error:", e));
+      }).catch(e => console.error("Doctor notification email error:", e));
     }
 
     res.status(201).json({ message: "Query submitted successfully", appointment });

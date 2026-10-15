@@ -47,6 +47,7 @@ export default function PatientDashboard() {
 
   const [formData, setFormData] = useState({
     name: '',
+    email: '',
     age: '',
     sex: '',
     phone: '',
@@ -73,6 +74,7 @@ export default function PatientDashboard() {
           setFormData(prev => ({
             ...prev,
             name: res.data.name || prev.name,
+            email: res.data.user?.email || prev.email,
             phone: res.data.phone || prev.phone,
             age: res.data.age ? String(res.data.age) : prev.age,
             sex: res.data.sex || prev.sex
