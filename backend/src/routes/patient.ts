@@ -188,65 +188,71 @@ router.post("/query", async (req: any, res: Response): Promise<void> => {
     const aiSummary = await generatePreVisitSummary(symptoms);
     const parsedSummary = typeof aiSummary === "string" ? JSON.parse(aiSummary) : aiSummary;
 
-    // Concurrency / Double Booking check using Prisma transaction
-    const appointment = await prisma.$transaction(async (tx) => {
-      // 1. Check if doctor is on leave
-      const leave = await tx.doctorLeave.findFirst({
-        where: {
-          doctorId: doctor.id,
-          date: {
-            gte: dayStart,
-            lt: dayEnd
+    // 1. Check if doctor is on leave
+    const leave = await prisma.doctorLeave.findFirst({
+      where: {
+        doctorId: doctor.id,
+        date: {
+          gte: dayStart,
+          lt: dayEnd
+        }
+      }
+    });
+    if (leave) {
+      res.status(409).json({ error: "Doctor is on leave on this date" });
+      return;
+    }
+
+    // 2. Check for overlapping appointments for the doctor
+    const overlapping = await prisma.appointment.findFirst({
+      where: {
+        doctorId: doctor.id,
+        status: { in: ["BOOKED", "COMPLETED"] },
+        OR: [
+          { startTime: { lt: end }, endTime: { gt: start } }
+        ]
+      }
+    });
+    if (overlapping) {
+      res.status(409).json({ error: "Time slot is no longer available" });
+      return;
+    }
+
+    // 2.5. Check if the patient already has an overlapping appointment with ANY doctor
+    const patientDoubleBooked = await prisma.appointment.findFirst({
+      where: {
+        patientId: patient.id,
+        status: { in: ["BOOKED", "COMPLETED"] },
+        OR: [
+          { startTime: { lt: end }, endTime: { gt: start } }
+        ]
+      }
+    });
+    if (patientDoubleBooked) {
+      res.status(409).json({ error: "You already have another appointment booked at this time" });
+      return;
+    }
+
+    // 3. Create Appointment & PreVisitForm
+    const appointment = await prisma.appointment.create({
+      data: {
+        patientId: patient.id,
+        doctorId: doctor.id,
+        startTime: start,
+        endTime: end,
+        status: "BOOKED",
+        preVisitForm: {
+          create: {
+            symptomsText: symptoms,
+            llmUrgencyLevel: parsedSummary.urgencyLevel || null,
+            llmChiefComplaint: parsedSummary.chiefComplaint || null,
+            llmSuggestedQuestions: Array.isArray(parsedSummary.suggestedQuestions) 
+              ? parsedSummary.suggestedQuestions.join(" | ") 
+              : (parsedSummary.suggestedQuestions || null)
           }
         }
-      });
-      if (leave) throw new Error("Doctor is on leave on this date");
-
-      // 2. Check for overlapping appointments for the doctor
-      const overlapping = await tx.appointment.findFirst({
-        where: {
-          doctorId: doctor.id,
-          status: { in: ["BOOKED", "COMPLETED"] },
-          OR: [
-            { startTime: { lt: end }, endTime: { gt: start } }
-          ]
-        }
-      });
-      if (overlapping) throw new Error("Time slot is no longer available");
-
-      // 2.5. Check if the patient already has an overlapping appointment with ANY doctor
-      const patientDoubleBooked = await tx.appointment.findFirst({
-        where: {
-          patientId: patient!.id,
-          status: { in: ["BOOKED", "COMPLETED"] },
-          OR: [
-            { startTime: { lt: end }, endTime: { gt: start } }
-          ]
-        }
-      });
-      if (patientDoubleBooked) throw new Error("You already have another appointment booked at this time");
-
-      // 3. Create Appointment & PreVisitForm
-      return await tx.appointment.create({
-        data: {
-          patientId: patient!.id,
-          doctorId: doctor.id,
-          startTime: start,
-          endTime: end,
-          status: "BOOKED",
-          preVisitForm: {
-            create: {
-              symptomsText: symptoms,
-              llmUrgencyLevel: parsedSummary.urgencyLevel || null,
-              llmChiefComplaint: parsedSummary.chiefComplaint || null,
-              llmSuggestedQuestions: Array.isArray(parsedSummary.suggestedQuestions) 
-                ? parsedSummary.suggestedQuestions.join(" | ") 
-                : (parsedSummary.suggestedQuestions || null)
-            }
-          }
-        },
-        include: { preVisitForm: true, doctor: true, patient: true }
-      });
+      },
+      include: { preVisitForm: true, doctor: true, patient: true }
     });
 
     // Send confirmation email asynchronously (non-blocking)
